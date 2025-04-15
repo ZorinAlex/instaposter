@@ -1,14 +1,15 @@
 # Instagram Post Scheduler
 
-A NestJS application for scheduling and automatically publishing Instagram posts using the official Instagram Content Publishing API.
+A full-stack application for scheduling and automatically publishing Instagram posts using the official Instagram Content Publishing API.
 
 ## Features
 
 - Schedule Instagram posts with images and captions for future dates
 - Automatically publish posts at scheduled times
 - Track post status (pending, posted, failed)
+- Modern Vue.js frontend with calendar and list views
 - Secure API with JWT authentication
-- API endpoints for creating, updating, and deleting scheduled posts
+- Image upload and storage
 
 ## Requirements
 
@@ -18,12 +19,21 @@ A NestJS application for scheduling and automatically publishing Instagram posts
 - Facebook Page connected to your Instagram account
 - Facebook Developer Account and App
 
+## Project Structure
+
+- `src/` - NestJS backend application
+- `client/` - Vue.js frontend application
+
 ## Setup
 
 ### 1. Install dependencies
 
 ```bash
+# Backend dependencies
 npm install
+
+# Frontend dependencies
+cd client && npm install
 ```
 
 ### 2. Configure Environment Variables
@@ -64,20 +74,28 @@ JWT_SECRET=your_super_secret_jwt_key
 ### 4. Run the Application
 
 ```bash
+# Run backend in development mode
 npm run start:dev
+
+# In a separate terminal, run frontend
+cd client && npm run dev
 ```
+
+## Frontend Usage
+
+Navigate to `http://localhost:5173` in your browser to access the frontend. From there you can:
+
+1. View the calendar to see scheduled posts
+2. Create new posts with images and captions
+3. Edit existing posts
+4. Delete posts
+5. Track post status
 
 ## API Endpoints
 
-### Authentication
+### Posts
 
-- `POST /auth/login` - Login and get JWT token
-  - Body: `{ "username": "admin", "password": "admin" }`
-
-### Posts (Protected with JWT)
-
-- `POST /posts` - Create a new scheduled post
-  - Body: `{ "caption": "Your post caption", "imageUrl": "https://example.com/your-image.jpg", "scheduledDate": "2023-12-31T12:00:00Z" }`
+- `POST /posts` - Create a new scheduled post with image upload
 - `GET /posts` - Get all scheduled posts
 - `GET /posts/:id` - Get a specific post
 - `PUT /posts/:id` - Update a scheduled post

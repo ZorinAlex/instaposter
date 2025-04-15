@@ -1,14 +1,49 @@
-import { Controller, Body, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { 
+  Controller, 
+  Body, 
+  Delete, 
+  Get, 
+  Param, 
+  Post, 
+  Put, 
+  UseInterceptors, 
+  UploadedFile,
+  BadRequestException,
+  Req
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { Post as PostEntity } from './schemas/post.schema';
+import { UploadService } from '../upload/upload.service';
+import { CreatePostDto } from './dto/create-post.dto';
+import { Express } from 'express';
 
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly uploadService: UploadService
+  ) {}
 
   @Post()
-  async create(@Body() createPostDto: any): Promise<PostEntity> {
-    return this.postsService.create(createPostDto);
+  @UseInterceptors(FileInterceptor('image'))
+  async create(
+    @Body() createPostDto: CreatePostDto,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any
+  ): Promise<PostEntity> {
+    if (!file) {
+      throw new BadRequestException('Image file is required');
+    }
+
+    // Get the public URL for the uploaded image
+    const imageUrl = this.uploadService.getFileUrl(file.filename, req);
+    
+    // Create the post with the image URL
+    return this.postsService.create({
+      ...createPostDto,
+      imageUrl
+    });
   }
 
   @Get()
@@ -28,6 +63,18 @@ export class PostsController {
 
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<PostEntity | null> {
-    return this.postsService.remove(id);
+    // Get the post to find its image URL
+    const post = await this.postsService.findOne(id);
+    const result = await this.postsService.remove(id);
+    
+    // If post is deleted and has an image, delete the image file
+    if (result && post?.imageUrl) {
+      // Extract filename from URL
+      const urlParts = post.imageUrl.split('/');
+      const filename = urlParts[urlParts.length - 1];
+      await this.uploadService.deleteFile(filename);
+    }
+    
+    return result;
   }
 }
