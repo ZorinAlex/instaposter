@@ -62,23 +62,70 @@
           
           <div class="form-right">
             <div class="image-upload-container">
-              <div class="upload-placeholder" v-if="!imagePreview && !form.imageUrl">
-                <i class="fas fa-cloud-upload-alt fa-3x"></i>
-                <p>Click or drag to upload an image</p>
-                <span>JPG, PNG or GIF (Max 5MB)</span>
-              </div>
-              
-              <div class="image-preview" v-else>
-                <img :src="imagePreview || form.imageUrl" alt="Preview">
-              </div>
-              
-              <input 
-                type="file" 
-                ref="fileInput" 
-                @change="handleFileChange" 
-                accept="image/*" 
-                :required="!isEditing"
-              >
+              <template v-if="canReplaceImage">
+                <div v-if="!rawImageData && !imagePreview">
+                  <div class="upload-placeholder">
+                    <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                    <p>Click or drag to upload an image</p>
+                    <span>JPG, PNG or GIF (Max 5MB)</span>
+                  </div>
+                  <label class="custom-file-upload">
+                    <input 
+                      type="file" 
+                      ref="fileInput" 
+                      @change="handleFileChange" 
+                      accept="image/*" 
+                      :required="!isEditing"
+                    >
+                    <span><i class="fas fa-upload"></i> Choose Image</span>
+                  </label>
+                </div>
+                <div v-else-if="rawImageData && showCropper" class="cropper-area">
+                  <div class="aspect-ratio-selector">
+                    <label for="aspect-ratio">Aspect Ratio:</label>
+                    <select id="aspect-ratio" v-model="selectedAspectRatio" class="text-field">
+                      <option v-for="option in aspectRatioOptions" :key="option.value" :value="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="cropper-box">
+                    <vue-cropper
+                      :key="selectedAspectRatio"
+                      ref="cropper"
+                      :src="rawImageData"
+                      :aspect-ratio="aspectRatio"
+                      :view-mode="1"
+                      :auto-crop-area="1"
+                      :background="false"
+                      :responsive="true"
+                      :check-cross-origin="false"
+                      style="width: 100%; height: 100%; display: block;"
+                    />
+                  </div>
+                  <div class="cropper-actions">
+                    <button type="button" class="secondary-btn" @click="resetImage">Remove</button>
+                    <button type="button" class="create-btn" @click="cropImage">Crop & Use</button>
+                  </div>
+                </div>
+                <div v-else-if="imagePreview">
+                  <div class="image-preview">
+                    <img :src="imagePreview" alt="Preview">
+                  </div>
+                  <div class="cropper-actions">
+                    <button type="button" class="secondary-btn" @click="resetImage">Remove</button>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <div v-if="form.imageUrl" class="image-preview">
+                  <img :src="form.imageUrl" alt="Post image" />
+                </div>
+                <div v-else class="upload-placeholder">
+                  <i class="fas fa-image fa-3x"></i>
+                  <p>No image for this post</p>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -100,9 +147,12 @@
 <script>
 import api from '@/services/api';
 import { format } from 'date-fns';
+import VueCropper from 'vue-cropperjs';
+import '@/assets/cropper.css';
 
 export default {
   name: 'PostForm',
+  components: { 'vue-cropper': VueCropper },
   props: {
     id: String
   },
@@ -115,28 +165,39 @@ export default {
         imageUrl: ''
       },
       selectedFile: null,
+      rawImageData: null,
       imagePreview: null,
       isEditing: false,
       loading: false,
       submitting: false,
       loadingMessage: '',
-      error: null
+      error: null,
+      showCropper: false,
+      selectedAspectRatio: '1',
+      aspectRatioOptions: [
+        { label: 'Square (1:1)', value: '1' },
+        { label: 'Portrait (4:5)', value: '0.8' },
+        { label: 'Landscape (1.91:1)', value: '1.91' }
+      ]
     };
   },
   computed: {
     minDateTime() {
-      // Format current date and time as required by datetime-local input
       const now = new Date();
       return format(now, "yyyy-MM-dd'T'HH:mm");
+    },
+    aspectRatio() {
+      return parseFloat(this.selectedAspectRatio);
+    },
+    canReplaceImage() {
+      return !this.isEditing || (this.isEditing && this.form.status === 'pending');
     }
   },
   methods: {
     getDefaultDate() {
-      // Use date from query params if available, or current date + 1 hour
       if (this.$route.query.date) {
         return format(new Date(this.$route.query.date), "yyyy-MM-dd'T'HH:mm");
       }
-      
       const date = new Date();
       date.setHours(date.getHours() + 1);
       return format(date, "yyyy-MM-dd'T'HH:mm");
@@ -144,38 +205,51 @@ export default {
     handleFileChange(event) {
       const file = event.target.files[0];
       if (!file) return;
-      
       if (file.size > 5 * 1024 * 1024) {
         alert('File size exceeds 5MB limit');
         this.$refs.fileInput.value = '';
         return;
       }
-      
       this.selectedFile = file;
-      this.createImagePreview(file);
+      this.rawImageData = URL.createObjectURL(file);
+      this.showCropper = true;
+      this.imagePreview = null;
+    },
+    cropImage() {
+      if (!this.$refs.cropper) return;
+      const canvas = this.$refs.cropper.getCroppedCanvas({
+        fillColor: '#fff',
+        imageSmoothingQuality: 'high'
+      });
+      if (canvas) {
+        this.imagePreview = canvas.toDataURL('image/jpeg');
+        // Convert dataURL to Blob for upload
+        canvas.toBlob(blob => {
+          this.selectedFile = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
+        }, 'image/jpeg', 0.95);
+        this.showCropper = false;
+      }
+    },
+    resetImage() {
+      this.selectedFile = null;
+      this.rawImageData = null;
+      this.imagePreview = null;
+      this.showCropper = false;
+      if (this.$refs.fileInput) this.$refs.fileInput.value = '';
     },
     createImagePreview(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.imagePreview = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      // Not used anymore, handled by cropper
     },
     fetchPost() {
       if (!this.id) return;
-      
       this.isEditing = true;
       this.loading = true;
       this.loadingMessage = 'Loading post details...';
-      
       api.getPost(this.id)
         .then(response => {
           const post = response.data;
-          
-          // Format the date for the datetime-local input
           const scheduledDate = new Date(post.scheduledDate);
           post.scheduledDate = format(scheduledDate, "yyyy-MM-dd'T'HH:mm");
-          
           this.form = post;
           this.loading = false;
         })
@@ -187,9 +261,7 @@ export default {
     },
     submitForm() {
       if (this.submitting) return;
-      
       this.submitting = true;
-      
       if (this.isEditing) {
         this.updatePost();
       } else {
@@ -202,7 +274,6 @@ export default {
       formData.append('scheduledDate', new Date(this.form.scheduledDate).toISOString());
       formData.append('status', this.form.status);
       formData.append('image', this.selectedFile);
-      
       api.createPost(formData)
         .then(response => {
           this.$router.push('/posts');
@@ -218,11 +289,9 @@ export default {
       formData.append('caption', this.form.caption);
       formData.append('scheduledDate', new Date(this.form.scheduledDate).toISOString());
       formData.append('status', this.form.status);
-      
       if (this.selectedFile) {
         formData.append('image', this.selectedFile);
       }
-      
       api.updatePost(this.id, formData)
         .then(response => {
           this.$router.push('/posts');
@@ -241,7 +310,6 @@ export default {
     if (this.$route.query.date) {
       this.form.scheduledDate = this.getDefaultDate();
     }
-    
     if (this.id) {
       this.fetchPost();
     }
@@ -339,58 +407,67 @@ textarea.text-field {
 }
 
 .image-upload-container {
-  position: relative;
-  height: 300px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--surface-2);
   border: 2px dashed var(--border-color);
   border-radius: 8px;
-  overflow: hidden;
+  padding: 1rem 0;
+  min-height: 320px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.cropper-area {
+  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  cursor: pointer;
-  background-color: var(--surface-2);
-  transition: border-color 0.2s;
 }
 
-.image-upload-container:hover {
-  border-color: var(--primary-color);
-}
-
-.image-upload-container input[type="file"] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 2;
-}
-
-.upload-placeholder {
-  text-align: center;
-  color: var(--on-surface);
-  opacity: 0.7;
-}
-
-.upload-placeholder i {
+.cropper-box {
+  width: 100%;
+  max-width: 400px;
+  aspect-ratio: 1 / 1;
+  background: #111;
+  border-radius: 8px;
+  overflow: hidden;
   margin-bottom: 1rem;
-  color: var(--primary-light);
-  opacity: 0.7;
+  min-height: 250px;
+  max-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.upload-placeholder span {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
+.cropper-box .cropper-container,
+.cropper-box .cropper-canvas,
+.cropper-box .cropper-drag-box,
+.cropper-box .cropper-crop-box,
+.cropper-box .cropper-view-box {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  box-sizing: border-box;
 }
 
 .image-preview {
-  position: absolute;
-  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  position: static;
   z-index: 1;
 }
 
 .image-preview img {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 
@@ -468,5 +545,73 @@ textarea.text-field {
     width: 100%;
     justify-content: center;
   }
+}
+
+.aspect-ratio-selector {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--surface-3);
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.aspect-ratio-selector label {
+  font-weight: 500;
+  color: var(--on-surface);
+  margin-bottom: 0;
+  font-size: 1rem;
+}
+
+.aspect-ratio-selector select.text-field {
+  background: var(--surface-2);
+  color: var(--on-surface);
+  border: 1.5px solid var(--primary-color);
+  border-radius: 999px;
+  padding: 0.4rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  box-shadow: none;
+}
+
+.aspect-ratio-selector select.text-field:focus {
+  border-color: var(--primary-dark);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.custom-file-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--primary-color);
+  color: var(--on-primary);
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.custom-file-upload:hover {
+  background: var(--primary-dark);
+}
+
+.custom-file-upload input[type="file"] {
+  display: none;
+}
+
+.cropper-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  justify-content: flex-end;
 }
 </style> 
