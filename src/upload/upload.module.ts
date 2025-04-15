@@ -4,6 +4,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { UploadService } from './upload.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [

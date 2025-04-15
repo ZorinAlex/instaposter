@@ -20,7 +20,7 @@ export class SchedulerService {
     try {
       const now = new Date();
       const pendingPosts = await this.postsService.findPendingPosts(now);
-
+      console.log(pendingPosts);
       for (const post of pendingPosts) {
         try {
           const mediaId = await this.instagramApiService.publishPost(post);
