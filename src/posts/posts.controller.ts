@@ -8,7 +8,8 @@ import {
   Put, 
   UseInterceptors, 
   UploadedFile,
-  BadRequestException
+  BadRequestException,
+  UseGuards
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
@@ -16,8 +17,10 @@ import { Post as PostEntity } from './schemas/post.schema';
 import { UploadService } from '../upload/upload.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { Express } from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('posts')
+@UseGuards(JwtAuthGuard)
 export class PostsController {
   constructor(
     private readonly postsService: PostsService,

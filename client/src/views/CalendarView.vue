@@ -5,71 +5,65 @@
       <div class="header-controls">
         <div class="navigation">
           <button @click="previousMonth" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
-          <h3>{{ currentMonthName }} {{ currentYear }}</h3>
+          <div class="month-display">{{ currentMonthName }} {{ currentYear }}</div>
           <button @click="nextMonth" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
         </div>
-        <div class="view-controls">
-          <button @click="viewMode = 'month'" :class="['view-btn', viewMode === 'month' ? 'active' : '']">Month</button>
-          <button @click="viewMode = 'week'" :class="['view-btn', viewMode === 'week' ? 'active' : '']">Week</button>
-          <button @click="viewMode = 'day'" :class="['view-btn', viewMode === 'day' ? 'active' : '']">Today</button>
-        </div>
-        <router-link to="/posts/new" class="btn btn-primary">
+        <router-link to="/posts/new" class="create-btn">
           <i class="fas fa-plus"></i> New Post
         </router-link>
       </div>
     </div>
     
-    <div class="calendar-container">
+    <div class="calendar-container card">
+      <div class="weekday-headers">
+        <div class="weekday-header">Mon</div>
+        <div class="weekday-header">Tue</div>
+        <div class="weekday-header">Wed</div>
+        <div class="weekday-header">Thu</div>
+        <div class="weekday-header">Fri</div>
+        <div class="weekday-header">Sat</div>
+        <div class="weekday-header">Sun</div>
+      </div>
+      
       <div class="calendar-grid">
-        <div class="weekday-headers">
-          <div class="weekday-header">Mon</div>
-          <div class="weekday-header">Tue</div>
-          <div class="weekday-header">Wed</div>
-          <div class="weekday-header">Thu</div>
-          <div class="weekday-header">Fri</div>
-          <div class="weekday-header">Sat</div>
-          <div class="weekday-header">Sun</div>
-        </div>
-        
-        <div class="calendar-days">
-          <div 
-            v-for="(day, index) in calendarDays" 
-            :key="index" 
-            :class="['calendar-day', 
-              !day.isCurrentMonth ? 'other-month' : '',
-              day.isToday ? 'today' : '',
-              day.date.getTime() === selectedDate?.getTime() ? 'selected' : ''
-            ]"
-            @click="selectDay(day.date)"
-          >
-            <div class="day-header">
-              <span class="day-number">{{ day.date.getDate() }}</span>
-              <span v-if="day.posts.length > 0" class="post-count">{{ day.posts.length }}</span>
+        <div 
+          v-for="(day, index) in calendarDays" 
+          :key="index" 
+          :class="['calendar-day', 
+            !day.isCurrentMonth ? 'other-month' : '',
+            day.isToday ? 'today' : '',
+            day.date.getTime() === selectedDate?.getTime() ? 'selected' : ''
+          ]"
+          @click="selectDay(day.date)"
+        >
+          <div class="day-header">
+            <span class="day-number">{{ day.date.getDate() }}</span>
+            <span v-if="day.posts.length > 0" class="post-count">{{ day.posts.length }}</span>
+          </div>
+          
+          <div class="day-content">
+            <div 
+              v-for="post in day.posts.slice(0, 2)" 
+              :key="post._id" 
+              class="post-preview"
+              :style="{ borderLeftColor: getStatusColor(post.status) }"
+              @click.stop="viewPostDetails(post._id)"
+            >
+              <div class="post-preview-image">
+                <img :src="post.imageUrl" :alt="post.caption">
+              </div>
+              <div class="post-preview-time">{{ formatTime(post.scheduledDate) }}</div>
             </div>
             
-            <div class="day-content">
-              <div 
-                v-for="post in day.posts.slice(0, 2)" 
-                :key="post._id" 
-                class="post-preview"
-                :style="{ borderColor: getStatusColor(post.status) }"
-              >
-                <div class="post-preview-image">
-                  <img :src="post.imageUrl" :alt="post.caption">
-                </div>
-                <div class="post-preview-time">{{ formatTime(post.scheduledDate) }}</div>
-              </div>
-              
-              <div v-if="day.posts.length > 2" class="more-posts">
-                +{{ day.posts.length - 2 }} more
-              </div>
+            <div v-if="day.posts.length > 2" class="more-posts">
+              +{{ day.posts.length - 2 }} more
             </div>
           </div>
         </div>
       </div>
     </div>
     
-    <div v-if="selectedDayPosts.length > 0" class="day-posts">
+    <div v-if="selectedDayPosts.length > 0" class="day-posts card">
       <h3>Posts for {{ formatSelectedDate }}</h3>
       <div class="posts-list">
         <div v-for="post in selectedDayPosts" :key="post._id" class="post-item">
@@ -97,12 +91,12 @@
       </div>
     </div>
     
-    <div v-else-if="selectedDate" class="no-posts">
+    <div v-else-if="selectedDate" class="no-posts card">
       <p>No posts scheduled for {{ formatSelectedDate }}</p>
       <router-link :to="{
         path: '/posts/new', 
         query: { date: selectedDate.toISOString() }
-      }" class="btn">
+      }" class="create-btn">
         <i class="fas fa-plus"></i> Add Post for This Day
       </router-link>
     </div>
@@ -111,8 +105,8 @@
 
 <script>
 import api from '@/services/api';
-import { format, isSameDay, startOfMonth, endOfMonth, addDays, 
-         subDays, isSameMonth, eachDayOfInterval, startOfWeek, 
+import { format, isSameDay, startOfMonth, endOfMonth, 
+         isSameMonth, eachDayOfInterval, startOfWeek, 
          endOfWeek, addMonths, subMonths } from 'date-fns';
 
 export default {
@@ -121,8 +115,7 @@ export default {
     return {
       posts: [],
       selectedDate: null,
-      currentDate: new Date(),
-      viewMode: 'month'
+      currentDate: new Date()
     };
   },
   computed: {
@@ -202,11 +195,17 @@ export default {
         api.deletePost(post._id)
           .then(() => {
             this.fetchPosts();
+            if (this.selectedDayPosts.length <= 1) {
+              this.selectedDate = null;
+            }
           })
           .catch(error => {
             console.error('Error deleting post:', error);
           });
       }
+    },
+    viewPostDetails(id) {
+      this.$router.push(`/posts/${id}/edit`);
     }
   },
   created() {
@@ -239,7 +238,15 @@ export default {
 .navigation {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
+}
+
+.month-display {
+  font-size: 1.2rem;
+  font-weight: 500;
+  min-width: 180px;
+  text-align: center;
 }
 
 .nav-btn {
@@ -248,146 +255,140 @@ export default {
   cursor: pointer;
   font-size: 1rem;
   padding: 0.5rem;
-  color: #555;
+  color: var(--on-surface);
   border-radius: 50%;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
 }
 
 .nav-btn:hover {
-  background-color: #f0f0f0;
-}
-
-.view-controls {
-  display: flex;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.view-btn {
-  background-color: #f9f9f9;
-  border: none;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.view-btn.active {
-  background-color: #405de6;
-  color: white;
-}
-
-.view-btn:not(:last-child) {
-  border-right: 1px solid #ddd;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .calendar-container {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 1rem;
-}
-
-.calendar-grid {
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 1rem;
 }
 
 .weekday-headers {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 0.5rem;
+  gap: 4px;
+  margin-bottom: 8px;
 }
 
 .weekday-header {
   text-align: center;
-  font-weight: bold;
   padding: 0.5rem;
-  color: #666;
+  font-weight: 500;
+  color: var(--on-surface);
 }
 
-.calendar-days {
+.calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0.5rem;
+  gap: 4px;
 }
 
 .calendar-day {
   min-height: 120px;
-  border: 1px solid #e0e0e0;
+  background-color: var(--surface-2);
   border-radius: 4px;
-  padding: 0.5rem;
+  position: relative;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s, transform 0.2s;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .calendar-day:hover {
-  border-color: #aaa;
-  background-color: #f9f9f9;
+  background-color: var(--surface-3);
+  transform: translateY(-2px);
 }
 
 .calendar-day.selected {
-  border-color: #405de6;
-  box-shadow: 0 0 0 1px #405de6;
+  border: 2px solid var(--primary-color);
 }
 
-.calendar-day.today {
-  background-color: #f0f7ff;
+.calendar-day.other-month {
+  opacity: 0.6;
+  background-color: var(--surface);
 }
 
-.other-month {
-  opacity: 0.5;
+.calendar-day.today .day-number {
+  background-color: var(--primary-color);
+  color: var(--on-primary);
 }
 
 .day-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .day-number {
-  font-weight: bold;
-}
-
-.today .day-number {
-  color: #405de6;
+  font-weight: 500;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .post-count {
-  font-size: 0.8rem;
-  background-color: #405de6;
-  color: white;
-  padding: 0.1rem 0.4rem;
-  border-radius: 10px;
+  background-color: var(--primary-light);
+  color: var(--on-primary);
+  border-radius: 12px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: bold;
 }
 
 .day-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  overflow: hidden;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  overflow-y: auto;
+  margin-top: 0.25rem;
 }
 
 .post-preview {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.25rem;
-  background-color: #f9f9f9;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--surface);
   border-radius: 4px;
   border-left: 3px solid;
   font-size: 0.8rem;
+  transition: transform 0.15s;
+  cursor: pointer;
+  width: 100%;
+}
+
+.post-preview:hover {
+  transform: translateX(3px);
 }
 
 .post-preview-image {
-  width: 25px;
-  height: 25px;
+  width: 30px;
+  height: 30px;
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .post-preview-image img {
@@ -397,37 +398,56 @@ export default {
 }
 
 .post-preview-time {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  color: var(--on-surface);
+  opacity: 0.8;
+  margin-left: auto;
 }
 
 .more-posts {
-  font-size: 0.75rem;
-  color: #666;
   text-align: center;
+  font-size: 0.7rem;
+  color: var(--primary-light);
   padding: 0.25rem;
 }
 
+.create-btn {
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.create-btn:hover {
+  background-color: var(--primary-dark);
+}
+
 .day-posts, .no-posts {
-  background-color: white;
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.day-posts h3 {
+  margin-bottom: 1rem;
 }
 
 .posts-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
 }
 
 .post-item {
   display: flex;
   gap: 1rem;
-  background-color: #f9f9f9;
+  background-color: var(--surface-2);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -449,9 +469,8 @@ export default {
   position: absolute;
   top: 5px;
   right: 5px;
-  padding: 0.1rem 0.5rem;
-  border-radius: 4px;
-  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
   font-size: 0.7rem;
   font-weight: bold;
   text-transform: uppercase;
@@ -464,8 +483,9 @@ export default {
 }
 
 .post-time {
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.8rem;
+  color: var(--on-surface);
+  opacity: 0.8;
   margin-bottom: 0.5rem;
 }
 
@@ -488,20 +508,23 @@ export default {
 .btn-icon {
   background: none;
   border: none;
-  color: #666;
+  color: var(--on-surface);
   font-size: 1.2rem;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 4px;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-icon:hover {
-  background-color: #eee;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-delete:hover {
-  color: #e53935;
+  color: var(--error);
 }
 
 .no-posts {
@@ -510,43 +533,49 @@ export default {
 }
 
 .no-posts p {
-  margin-bottom: 1rem;
-  color: #666;
+  margin-bottom: 1.5rem;
+  color: var(--on-surface);
+  opacity: 0.8;
 }
 
 @media (max-width: 768px) {
-  .calendar-days {
-    gap: 0.25rem;
+  .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .weekday-headers {
+    display: none;
   }
   
   .calendar-day {
-    min-height: 80px;
-    padding: 0.25rem;
+    min-height: auto;
+    margin-bottom: 8px;
   }
   
-  .weekday-header {
-    font-size: 0.8rem;
-    padding: 0.25rem;
+  .day-header {
+    padding: 0.75rem;
   }
   
-  .post-preview-image {
-    width: 20px;
-    height: 20px;
+  .day-content {
+    max-height: none;
   }
   
-  .post-item {
+  .header-controls {
     flex-direction: column;
+    align-items: stretch;
   }
   
-  .post-image {
-    width: 100%;
-    height: 150px;
+  .navigation {
+    justify-content: space-between;
   }
   
-  .post-actions {
-    flex-direction: row;
-    justify-content: flex-end;
-    width: 100%;
+  .create-btn {
+    text-align: center;
+  }
+  
+  .month-display {
+    min-width: 140px;
+    font-size: 1rem;
   }
 }
 </style> 

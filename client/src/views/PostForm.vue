@@ -2,16 +2,25 @@
   <div class="post-form">
     <div class="page-header">
       <h2>{{ isEditing ? 'Edit Post' : 'Create New Post' }}</h2>
+      <div class="header-actions">
+        <button @click="goBack" class="secondary-btn">
+          <i class="fas fa-arrow-left"></i> Back
+        </button>
+      </div>
     </div>
     
-    <div class="form-container">
+    <div class="form-container card">
       <div v-if="loading" class="loading-indicator">
+        <div class="loading-spinner"></div>
         <p>{{ loadingMessage }}</p>
       </div>
       
       <div v-else-if="error" class="error-message">
+        <i class="fas fa-exclamation-circle"></i>
         <p>{{ error }}</p>
-        <button @click="goBack" class="btn">Go Back</button>
+        <button @click="goBack" class="secondary-btn">
+          <i class="fas fa-arrow-left"></i> Go Back
+        </button>
       </div>
       
       <form v-else @submit.prevent="submitForm" class="form">
@@ -25,6 +34,7 @@
                 rows="4" 
                 required
                 placeholder="Write your Instagram caption here..."
+                class="text-field"
               ></textarea>
             </div>
             
@@ -36,12 +46,13 @@
                 v-model="form.scheduledDate" 
                 required
                 :min="minDateTime"
+                class="text-field"
               >
             </div>
             
             <div class="form-group" v-if="isEditing && form.status">
               <label for="status">Status</label>
-              <select id="status" v-model="form.status">
+              <select id="status" v-model="form.status" class="text-field">
                 <option value="pending">Pending</option>
                 <option value="posted">Posted</option>
                 <option value="failed">Failed</option>
@@ -73,10 +84,10 @@
         </div>
         
         <div class="form-actions">
-          <button type="button" @click="goBack" class="btn btn-cancel">
+          <button type="button" @click="goBack" class="secondary-btn">
             Cancel
           </button>
-          <button type="submit" class="btn btn-primary" :disabled="submitting">
+          <button type="submit" class="create-btn" :disabled="submitting">
             <i class="fas fa-spinner fa-spin" v-if="submitting"></i>
             {{ isEditing ? 'Update Post' : 'Create Post' }}
           </button>
@@ -245,24 +256,48 @@ export default {
   gap: 1.5rem;
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .form-container {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 2rem;
 }
 
 .loading-indicator, .error-message {
   text-align: center;
   padding: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .error-message {
-  color: #e53935;
+  color: var(--error);
 }
 
-.error-message button {
-  margin-top: 1rem;
+.error-message i {
+  font-size: 2rem;
 }
 
 .form-grid {
@@ -278,37 +313,47 @@ export default {
 label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: #555;
+  font-weight: 500;
+  color: var(--on-surface);
 }
 
-input, textarea, select {
+.text-field {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 1rem;
   font-family: inherit;
+  background-color: var(--surface-2);
+  color: var(--on-surface);
+  transition: border-color 0.2s;
 }
 
-textarea {
+.text-field:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+textarea.text-field {
   resize: vertical;
 }
 
 .image-upload-container {
   position: relative;
   height: 300px;
-  border: 2px dashed #ddd;
+  border: 2px dashed var(--border-color);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
+  background-color: var(--surface-2);
+  transition: border-color 0.2s;
 }
 
 .image-upload-container:hover {
-  border-color: #aaa;
+  border-color: var(--primary-color);
 }
 
 .image-upload-container input[type="file"] {
@@ -321,12 +366,14 @@ textarea {
 
 .upload-placeholder {
   text-align: center;
-  color: #777;
+  color: var(--on-surface);
+  opacity: 0.7;
 }
 
 .upload-placeholder i {
   margin-bottom: 1rem;
-  color: #aaa;
+  color: var(--primary-light);
+  opacity: 0.7;
 }
 
 .upload-placeholder span {
@@ -353,12 +400,50 @@ textarea {
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-color);
 }
 
-.btn-cancel {
-  background-color: #f0f0f0;
-  color: #333;
+.create-btn {
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.create-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+.create-btn:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  background-color: var(--surface-3);
+  color: var(--on-surface);
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background-color: var(--surface-4);
 }
 
 @media (max-width: 768px) {
@@ -373,6 +458,15 @@ textarea {
   .image-upload-container {
     height: 250px;
     margin-bottom: 1.5rem;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .create-btn, .secondary-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style> 

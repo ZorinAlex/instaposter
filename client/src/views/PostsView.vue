@@ -11,22 +11,27 @@
             <option value="failed">Failed</option>
           </select>
         </div>
-        <router-link to="/posts/new" class="btn btn-primary">
+        <router-link to="/posts/new" class="create-btn">
           <i class="fas fa-plus"></i> New Post
         </router-link>
       </div>
     </div>
     
-    <div class="loading-indicator" v-if="loading">
+    <div class="loading-indicator card" v-if="loading">
+      <div class="loading-spinner"></div>
       <p>Loading posts...</p>
     </div>
     
-    <div class="error-message" v-else-if="error">
+    <div class="error-message card" v-else-if="error">
+      <i class="fas fa-exclamation-circle"></i>
       <p>{{ error }}</p>
+      <button @click="fetchPosts" class="retry-btn">
+        <i class="fas fa-sync"></i> Retry
+      </button>
     </div>
     
     <div class="post-list" v-else-if="filteredPosts.length > 0">
-      <div class="post-item" v-for="post in filteredPosts" :key="post._id">
+      <div class="post-item card" v-for="post in filteredPosts" :key="post._id">
         <div class="post-image">
           <img :src="post.imageUrl" :alt="post.caption">
           <div class="post-status" :style="{ backgroundColor: getStatusColor(post.status) }">
@@ -50,17 +55,17 @@
           </div>
         </div>
         <div class="post-actions">
-          <router-link :to="`/posts/${post._id}/edit`" class="btn btn-edit">
+          <router-link :to="`/posts/${post._id}/edit`" class="action-btn edit-btn">
             <i class="fas fa-edit"></i> Edit
           </router-link>
-          <button @click="deletePost(post)" class="btn btn-delete">
+          <button @click="deletePost(post)" class="action-btn delete-btn">
             <i class="fas fa-trash-alt"></i> Delete
           </button>
         </div>
       </div>
     </div>
     
-    <div class="empty-state" v-else>
+    <div class="empty-state card" v-else>
       <div class="empty-state-content">
         <i class="fas fa-inbox fa-3x"></i>
         <h3>No posts found</h3>
@@ -70,8 +75,8 @@
         <p v-else>
           You haven't created any posts yet.
         </p>
-        <router-link to="/posts/new" class="btn btn-primary">
-          Create Your First Post
+        <router-link to="/posts/new" class="create-btn">
+          <i class="fas fa-plus"></i> Create Your First Post
         </router-link>
       </div>
     </div>
@@ -154,6 +159,7 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .header-actions {
@@ -168,22 +174,67 @@ export default {
 }
 
 .status-filter {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 0.9rem;
+  background-color: var(--surface-2);
+  color: var(--on-surface);
+  transition: border-color 0.2s;
+}
+
+.status-filter:focus {
+  border-color: var(--primary-color);
+  outline: none;
 }
 
 .loading-indicator, .error-message {
-  background-color: white;
   padding: 2rem;
   text-align: center;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .error-message {
-  color: #e53935;
+  color: var(--error);
+}
+
+.error-message i {
+  font-size: 2rem;
+}
+
+.retry-btn {
+  margin-top: 1rem;
+  background-color: var(--surface-2);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.retry-btn:hover {
+  background-color: var(--surface-3);
 }
 
 .post-list {
@@ -194,10 +245,12 @@ export default {
 
 .post-item {
   display: flex;
-  background-color: white;
-  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.post-item:hover {
+  transform: translateY(-3px);
 }
 
 .post-image {
@@ -228,11 +281,12 @@ export default {
 .post-details {
   flex: 1;
   padding: 1rem;
-  border-right: 1px solid #eee;
+  border-right: 1px solid var(--border-color);
 }
 
 .post-date {
-  color: #666;
+  color: var(--on-surface);
+  opacity: 0.7;
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
 }
@@ -244,7 +298,6 @@ export default {
 
 .post-meta {
   font-size: 0.85rem;
-  color: #777;
   margin-top: 0.5rem;
 }
 
@@ -265,25 +318,79 @@ export default {
   width: 120px;
 }
 
-.empty-state {
+.action-btn {
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 3rem 0;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.edit-btn {
+  background-color: var(--surface-3);
+  color: var(--on-surface);
+}
+
+.edit-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--on-primary);
+}
+
+.delete-btn {
+  background-color: var(--surface-3);
+  color: var(--on-surface);
+}
+
+.delete-btn:hover {
+  background-color: var(--error);
+  color: white;
+}
+
+.create-btn {
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.create-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+.empty-state {
+  padding: 3rem;
 }
 
 .empty-state-content {
   text-align: center;
-  color: #777;
+  color: var(--on-surface);
+  opacity: 0.7;
 }
 
 .empty-state-content i {
   margin-bottom: 1rem;
-  color: #ccc;
+  color: var(--primary-light);
+  opacity: 0.5;
 }
 
 .empty-state-content h3 {
   margin-bottom: 0.5rem;
+  color: var(--on-surface);
 }
 
 .empty-state-content p {
@@ -300,10 +407,38 @@ export default {
     height: 200px;
   }
   
+  .post-details {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
   .post-actions {
     flex-direction: row;
     width: 100%;
     padding: 0.75rem;
+  }
+  
+  .action-btn {
+    flex: 1;
+  }
+  
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-container {
+    width: 100%;
+  }
+  
+  .status-filter {
+    width: 100%;
+  }
+  
+  .create-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style> 

@@ -8,6 +8,8 @@ import { PostsModule } from './posts/posts.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { InstagramModule } from './instagram/instagram.module';
 import { UploadModule } from './upload/upload.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { UploadModule } from './upload/upload.module';
     SchedulerModule,
     InstagramModule,
     UploadModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

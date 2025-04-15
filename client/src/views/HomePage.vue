@@ -1,35 +1,20 @@
 <template>
   <div class="home">
-    <div class="welcome-section">
-      <h2>Welcome to Instagram Post Scheduler</h2>
-      <p>Manage and schedule your Instagram posts with ease</p>
-      
-      <div class="action-buttons">
-        <router-link to="/calendar" class="btn">
-          <i class="fas fa-calendar-alt"></i> Calendar View
-        </router-link>
-        <router-link to="/posts" class="btn">
-          <i class="fas fa-list"></i> Posts List
-        </router-link>
-        <router-link to="/posts/new" class="btn btn-primary">
-          <i class="fas fa-plus"></i> Create New Post
-        </router-link>
-      </div>
+    <div class="page-header">
+      <h2>Instagram Post Scheduler</h2>
+      <p>Monitor and manage your Instagram post schedule</p>
     </div>
     
-    <!-- Test Component -->
-    <TestComponent />
-    
     <div class="stats-section" v-if="loaded">
-      <div class="stat-card">
+      <div class="stat-card card">
         <h3>Pending Posts</h3>
         <div class="stat-value">{{ pendingCount }}</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card card">
         <h3>Posted</h3>
         <div class="stat-value">{{ postedCount }}</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card card">
         <h3>Failed</h3>
         <div class="stat-value">{{ failedCount }}</div>
       </div>
@@ -41,7 +26,8 @@
         <div 
           v-for="post in latestPosts" 
           :key="post._id" 
-          class="post-card"
+          class="post-card card"
+          @click="viewPostDetails(post._id)"
         >
           <div class="post-image">
             <img :src="post.imageUrl" :alt="post.caption">
@@ -59,18 +45,23 @@
         </div>
       </div>
     </div>
+    
+    <div v-else-if="loaded" class="empty-state card">
+      <i class="fas fa-image empty-icon"></i>
+      <h3>No posts yet</h3>
+      <p>Create your first Instagram post to get started</p>
+      <router-link to="/posts/new" class="create-post-btn">
+        <i class="fas fa-plus"></i> Create New Post
+      </router-link>
+    </div>
   </div>
 </template>
 
 <script>
 import api from '@/services/api';
-import TestComponent from '@/components/TestComponent.vue';
 
 export default {
   name: 'HomePage',
-  components: {
-    TestComponent
-  },
   data() {
     return {
       posts: [],
@@ -88,7 +79,7 @@ export default {
       return this.posts.filter(post => post.status === 'failed').length;
     },
     latestPosts() {
-      return this.posts.slice(0, 3);
+      return this.posts.slice(0, 6);
     }
   },
   methods: {
@@ -112,6 +103,9 @@ export default {
     },
     getStatusColor(status) {
       return api.getStatusColor(status);
+    },
+    viewPostDetails(id) {
+      this.$router.push(`/posts/${id}/edit`);
     }
   },
   created() {
@@ -127,75 +121,40 @@ export default {
   gap: 2rem;
 }
 
-.welcome-section {
+.page-header {
   text-align: center;
-  padding: 2rem;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
 }
 
-.welcome-section p {
-  margin-bottom: 1.5rem;
-  font-size: 1.1rem;
-  color: #666;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  background-color: #f0f0f0;
-  color: #333;
-  border-radius: 4px;
-  text-decoration: none;
-  font-weight: bold;
-  transition: all 0.2s;
-}
-
-.btn i {
-  margin-right: 0.5rem;
-}
-
-.btn:hover {
-  background-color: #e0e0e0;
-  transform: translateY(-2px);
-}
-
-.btn-primary {
-  background-color: #405de6;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #304aa6;
+.page-header p {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  color: var(--on-surface);
+  opacity: 0.8;
 }
 
 .stats-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
 }
 
 .stat-card {
-  background-color: white;
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .stat-value {
   font-size: 2.5rem;
-  font-weight: bold;
-  color: #405de6;
+  font-weight: 500;
+  color: var(--primary-light);
 }
 
 .recent-posts h3 {
@@ -209,15 +168,14 @@ export default {
 }
 
 .post-card {
-  background-color: white;
-  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .post-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .post-image {
@@ -249,11 +207,48 @@ export default {
 
 .post-caption {
   margin-bottom: 0.5rem;
-  font-weight: bold;
+  font-weight: 500;
 }
 
 .post-date {
-  color: #666;
+  color: var(--on-surface);
+  opacity: 0.7;
   font-size: 0.9rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  margin: 2rem auto;
+  max-width: 500px;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: var(--primary-light);
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+.create-post-btn {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.create-post-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+@media (max-width: 768px) {
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
 }
 </style> 
