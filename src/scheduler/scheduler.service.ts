@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PostsService } from '../posts/posts.service';
 import { InstagramApiService } from '../instagram/instagram-api.service';
+import { UploadService } from '../upload/upload.service';
 import { Post } from '../posts/schemas/post.schema';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class SchedulerService {
   constructor(
     private readonly postsService: PostsService,
     private readonly instagramApiService: InstagramApiService,
+    private readonly uploadService: UploadService
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -20,15 +22,31 @@ export class SchedulerService {
     try {
       const now = new Date();
       const pendingPosts = await this.postsService.findPendingPosts(now);
-      console.log(pendingPosts);
+
       for (const post of pendingPosts) {
         try {
-          const mediaId = await this.instagramApiService.publishPost(post);
-          await this.postsService.update(String(post._id), {
+          const result = await this.instagramApiService.publishPost(post);
+          
+          // Extract filename from the local image URL
+          const urlParts = post.imageUrl.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          
+          // Update post data
+          const updateData: any = {
             status: 'posted',
             postedAt: new Date(),
-            instagramMediaId: mediaId,
-          });
+            instagramMediaId: result.mediaId,
+          };
+          
+          // If Instagram provided a media URL, use it and delete local file
+          if (result.instagramImageUrl) {
+            updateData.imageUrl = result.instagramImageUrl;
+            // Delete the local file since we now have the Instagram URL
+            await this.uploadService.deleteFile(filename);
+            this.logger.log(`Deleted local image file: ${filename} (replaced with Instagram URL)`);
+          }
+          
+          await this.postsService.update(String(post._id), updateData);
           this.logger.log(`Post ${post._id} published successfully`);
         } catch (error) {
           await this.postsService.update(String(post._id), {

@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule,
     MulterModule.register({
       storage: diskStorage({
         destination: './public/uploads',

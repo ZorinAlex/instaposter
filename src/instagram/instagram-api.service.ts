@@ -3,13 +3,18 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { Post } from '../posts/schemas/post.schema';
 
+interface PublishResult {
+  mediaId: string;
+  instagramImageUrl?: string;
+}
+
 @Injectable()
 export class InstagramApiService {
   private readonly logger = new Logger(InstagramApiService.name);
 
   constructor(private configService: ConfigService) {}
 
-  async publishPost(post: Post): Promise<string> {
+  async publishPost(post: Post): Promise<PublishResult> {
     this.logger.log(`Publishing post with caption: ${post.caption}`);
 
     try {
@@ -31,7 +36,16 @@ export class InstagramApiService {
       const mediaId = await this.publishContainer(igUserId, accessToken, containerId);
       this.logger.log(`Post published to Instagram with ID: ${mediaId}`);
       
-      return mediaId;
+      // Step 4: Get the Instagram image URL
+      let instagramImageUrl = undefined;
+      try {
+        const mediaInfo = await this.getMediaInfo(mediaId, accessToken);
+        instagramImageUrl = mediaInfo?.media_url || undefined;
+      } catch (error) {
+        this.logger.warn(`Could not fetch Instagram image URL: ${error.message}`);
+      }
+      
+      return { mediaId, instagramImageUrl };
     } catch (error) {
       this.logger.error(`Failed to publish post to Instagram: ${error.message}`);
       if (error.response) {
@@ -108,5 +122,23 @@ export class InstagramApiService {
     }
 
     return publishResponse.data.id;
+  }
+
+  private async getMediaInfo(mediaId: string, accessToken: string) {
+    try {
+      const response = await axios.get(
+        `https://graph.facebook.com/v22.0/${mediaId}`,
+        {
+          params: {
+            fields: 'id,media_url,permalink',
+            access_token: accessToken
+          }
+        }
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Error fetching media info: ${error.message}`);
+      return null;
+    }
   }
 } 
