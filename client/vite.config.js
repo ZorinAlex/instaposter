@@ -17,5 +17,13 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      // Add any specific esbuild options here if needed
+    }
+  },
+  build: {
+    minify: 'esbuild'
   }
 }); 

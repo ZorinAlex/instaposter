@@ -17,6 +17,9 @@
       </div>
     </div>
     
+    <!-- Test Component -->
+    <TestComponent />
+    
     <div class="stats-section" v-if="loaded">
       <div class="stat-card">
         <h3>Pending Posts</h3>
@@ -61,9 +64,13 @@
 
 <script>
 import api from '@/services/api';
+import TestComponent from '@/components/TestComponent.vue';
 
 export default {
   name: 'HomePage',
+  components: {
+    TestComponent
+  },
   data() {
     return {
       posts: [],

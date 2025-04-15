@@ -45,7 +45,10 @@ MONGO_URI=mongodb://localhost:27017/instagram_scheduler
 IG_USER_ID=your_instagram_user_id
 IG_ACCESS_TOKEN=your_long_lived_access_token
 JWT_SECRET=your_super_secret_jwt_key
+BASE_URL=http://localhost:3000
 ```
+
+The `BASE_URL` should be set to your server's public URL in production environments.
 
 ### 3. Setting up Instagram API Access
 

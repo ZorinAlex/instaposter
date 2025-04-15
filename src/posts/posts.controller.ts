@@ -8,8 +8,7 @@ import {
   Put, 
   UseInterceptors, 
   UploadedFile,
-  BadRequestException,
-  Req
+  BadRequestException
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
@@ -29,15 +28,14 @@ export class PostsController {
   @UseInterceptors(FileInterceptor('image'))
   async create(
     @Body() createPostDto: CreatePostDto,
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: any
+    @UploadedFile() file: Express.Multer.File
   ): Promise<PostEntity> {
     if (!file) {
       throw new BadRequestException('Image file is required');
     }
 
     // Get the public URL for the uploaded image
-    const imageUrl = this.uploadService.getFileUrl(file.filename, req);
+    const imageUrl = this.uploadService.getFileUrl(file.filename);
     
     // Create the post with the image URL
     return this.postsService.create({
