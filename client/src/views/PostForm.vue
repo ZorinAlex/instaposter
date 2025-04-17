@@ -64,26 +64,30 @@
             <div class="image-upload-container">
               <template v-if="canReplaceImage">
                 <div v-if="!rawImageData && !imagePreview">
-                  <div class="upload-placeholder">
+                  <div v-if="isEditing && form.imageUrl" class="image-preview-existing">
+                    <img :src="form.imageUrl" alt="Current post image" />
+                    <label class="custom-file-upload replace-button">
+                      <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*">
+                      <span><i class="fas fa-sync-alt"></i> Replace Image</span>
+                    </label>
+                  </div>
+                  <div v-else class="upload-placeholder">
                     <i class="fas fa-cloud-upload-alt fa-3x"></i>
                     <p>Click or drag to upload an image</p>
                     <span>JPG, PNG or GIF (Max 5MB)</span>
+                    <label class="custom-file-upload">
+                      <input type="file" ref="fileInput" @change="handleFileChange" accept="image/*" :required="!isEditing">
+                      <span><i class="fas fa-upload"></i> Choose Image</span>
+                    </label>
                   </div>
-                  <label class="custom-file-upload">
-                    <input 
-                      type="file" 
-                      ref="fileInput" 
-                      @change="handleFileChange" 
-                      accept="image/*" 
-                      :required="!isEditing"
-                    >
-                    <span><i class="fas fa-upload"></i> Choose Image</span>
-                  </label>
                 </div>
                 <div v-else-if="rawImageData && showCropper" class="cropper-area">
-                  <div class="aspect-ratio-selector">
-                    <label for="aspect-ratio">Aspect Ratio:</label>
-                    <select id="aspect-ratio" v-model="selectedAspectRatio" class="text-field">
+                  <div class="aspect-ratio-selector custom-select-group align-right">
+                    <select
+                      id="aspect-ratio"
+                      v-model="selectedAspectRatio"
+                      class="custom-select flat-select"
+                    >
                       <option v-for="option in aspectRatioOptions" :key="option.value" :value="option.value">
                         {{ option.label }}
                       </option>
@@ -131,6 +135,14 @@
         </div>
         
         <div class="form-actions">
+          <button
+            v-if="isEditing"
+            type="button"
+            @click="confirmDeletePost"
+            class="delete-btn"
+          >
+            <i class="fas fa-trash-alt"></i> Delete Post
+          </button>
           <button type="button" @click="goBack" class="secondary-btn">
             Cancel
           </button>
@@ -299,6 +311,25 @@ export default {
         .catch(error => {
           console.error('Error updating post:', error);
           alert('Failed to update post. Please try again.');
+          this.submitting = false;
+        });
+    },
+    confirmDeletePost() {
+      if (confirm('Are you sure you want to permanently delete this post? This action cannot be undone.')) {
+        this.deletePost();
+      }
+    },
+    deletePost() {
+      if (!this.id) return;
+      this.submitting = true; // Use submitting state to disable buttons
+      api.deletePost(this.id)
+        .then(() => {
+          alert('Post deleted successfully.');
+          this.$router.push('/posts');
+        })
+        .catch(error => {
+          console.error('Error deleting post:', error);
+          alert('Failed to delete post. Please try again.');
           this.submitting = false;
         });
     },
@@ -478,6 +509,7 @@ textarea.text-field {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border-color);
+  align-items: center;
 }
 
 .create-btn {
@@ -583,35 +615,69 @@ textarea.text-field {
   box-shadow: 0 0 0 2px var(--primary-light);
 }
 
-.custom-file-upload {
+.flat-select {
+  border-radius: 0 !important;
+  background: var(--surface-2);
+  color: var(--on-surface);
+  border: 1.5px solid var(--primary-color);
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.6rem 2.2rem 0.6rem 1rem;
+  box-shadow: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.flat-select:focus {
+  border-color: var(--primary-dark);
+  background: var(--surface-3);
+}
+
+.flat-select option {
+  color: var(--on-surface);
+  background: var(--surface-2);
+}
+
+.custom-select-group::after {
+  right: 1.2rem;
+  top: 1.4rem;
+}
+
+.image-preview-existing {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+.image-preview-existing img {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+.replace-button {
+  margin-top: 0;
+}
+
+.delete-btn {
+  background-color: transparent;
+  color: var(--error);
+  border: 1px solid var(--error);
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--primary-color);
-  color: var(--on-primary);
-  padding: 0.6rem 1.2rem;
-  border-radius: 4px;
   font-weight: 500;
-  font-size: 1rem;
+  transition: all 0.2s;
   cursor: pointer;
-  margin-top: 1rem;
-  transition: background 0.2s;
-  border: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-right: auto; /* Push other buttons to the right */
 }
 
-.custom-file-upload:hover {
-  background: var(--primary-dark);
-}
-
-.custom-file-upload input[type="file"] {
-  display: none;
-}
-
-.cropper-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
-  justify-content: flex-end;
+.delete-btn:hover {
+  background-color: var(--error);
+  color: white;
 }
 </style> 
