@@ -512,28 +512,62 @@ textarea.text-field {
   align-items: center;
 }
 
-.create-btn {
+/* Unified Visual Styles for Primary Buttons */
+.create-btn,
+.custom-file-upload {
+  /* Core Layout */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  /* Visual Appearance */
   background-color: var(--primary-color);
   color: var(--on-primary);
   padding: 0.6rem 1.2rem;
   border-radius: 4px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
   font-weight: 500;
-  transition: background-color 0.2s;
+  font-size: 1rem; /* Explicit font size */
   border: none;
+  text-decoration: none;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.create-btn:hover {
+/* Unified Hover State */
+.create-btn:hover,
+.custom-file-upload:hover {
   background-color: var(--primary-dark);
 }
 
+/* Specifics needed only for file upload */
+.custom-file-upload {
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-top: 1rem; /* Keep spacing */
+}
+
+/* Specifics needed only for form submit button */
 .create-btn:disabled {
   background-color: #555;
   cursor: not-allowed;
+}
+
+/* --- Keep these as they are --- */
+
+/* Hide the actual file input visually but keep it accessible */
+.custom-file-upload input[type="file"] {
+  position: absolute;
+  left: 0; top: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; z-index: 1;
+}
+
+/* Style for the text inside the button */
+.custom-file-upload span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 0;
 }
 
 .secondary-btn {
@@ -673,11 +707,30 @@ textarea.text-field {
   font-weight: 500;
   transition: all 0.2s;
   cursor: pointer;
-  margin-right: auto; /* Push other buttons to the right */
 }
 
 .delete-btn:hover {
   background-color: var(--error);
   color: white;
+}
+
+.upload-placeholder {
+  text-align: center;
+  color: var(--on-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.upload-placeholder i {
+  margin-bottom: 0.5rem;
+}
+
+.upload-placeholder span {
+  font-size: 1rem;
+  margin-top: 0;
 }
 </style> 
