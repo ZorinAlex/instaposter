@@ -5,7 +5,7 @@ export type PostDocument = Post & Document;
 
 @Schema({ timestamps: true })
 export class Post extends Document {
-  @Prop({ required: true })
+  @Prop({ required: false, default: '' })
   caption: string;
 
   @Prop({ required: true })

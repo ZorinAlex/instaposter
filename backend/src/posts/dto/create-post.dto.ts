@@ -3,7 +3,7 @@ import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreatePostDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   caption: string;
 
   @IsDate()

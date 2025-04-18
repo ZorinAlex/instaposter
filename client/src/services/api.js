@@ -45,6 +45,10 @@ export default {
     return apiClient.get('/posts');
   },
   
+  getRandomCaption() {
+    return apiClient.get('/posts/random-caption');
+  },
+  
   getPost(id) {
     return apiClient.get(`/posts/${id}`);
   },
@@ -63,6 +67,12 @@ export default {
   
   deletePost(id) {
     return apiClient.delete(`/posts/${id}`);
+  },
+  
+  getAICaption(imageUrl) {
+    return apiClient.get(`/posts/ai-caption`, {
+      params: imageUrl ? { imageUrl } : {}
+    });
   },
   
   // Helper methods

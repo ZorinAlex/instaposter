@@ -27,15 +27,34 @@
         <div class="form-grid">
           <div class="form-left">
             <div class="form-group">
-              <label for="caption">Caption *</label>
-              <textarea 
-                id="caption" 
-                v-model="form.caption" 
-                rows="4" 
-                required
-                placeholder="Write your Instagram caption here..."
-                class="text-field"
-              ></textarea>
+              <label for="caption">Caption</label>
+              <div class="caption-container">
+                <textarea 
+                  id="caption" 
+                  v-model="form.caption" 
+                  rows="4" 
+                  placeholder="Write your Instagram caption here..."
+                  class="text-field"
+                ></textarea>
+                <div class="caption-actions">
+                  <button 
+                    type="button" 
+                    @click="generateRandomCaption" 
+                    class="caption-btn random-caption-btn"
+                    title="Generate random caption"
+                  >
+                    <i class="fas fa-random"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    @click="generateAICaption" 
+                    class="caption-btn ai-caption-btn"
+                    title="Generate AI caption"
+                  >
+                    <i class="fas fa-robot"></i>
+                  </button>
+                </div>
+              </div>
             </div>
             
             <div class="form-group">
@@ -335,6 +354,43 @@ export default {
     },
     goBack() {
       this.$router.go(-1);
+    },
+    generateRandomCaption() {
+      api.getRandomCaption()
+        .then(response => {
+          this.form.caption = response.data.caption;
+        })
+        .catch(error => {
+          console.error('Error generating random caption:', error);
+          alert('Failed to generate random caption. Please try again.');
+        });
+    },
+    generateAICaption() {
+      // Use either the existing post image URL or the newly uploaded image preview
+      let imageUrl = '';
+      
+      if (this.imagePreview) {
+        // Use the cropped image preview
+        imageUrl = this.imagePreview;
+      } else if (this.isEditing && this.form.imageUrl) {
+        // Use the existing image URL if editing a post
+        imageUrl = this.form.imageUrl;
+      } else if (this.rawImageData) {
+        // Use the raw image data before cropping
+        imageUrl = this.rawImageData;
+      } else {
+        alert('Please upload an image first to generate an AI caption');
+        return;
+      }
+      
+      api.getAICaption(imageUrl)
+        .then(response => {
+          this.form.caption = response.data.caption;
+        })
+        .catch(error => {
+          console.error('Error generating AI caption:', error);
+          alert('Failed to generate AI caption. Please try again.');
+        });
     }
   },
   created() {
@@ -732,5 +788,56 @@ textarea.text-field {
 .upload-placeholder span {
   font-size: 1rem;
   margin-top: 0;
+}
+
+.caption-container {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.caption-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.caption-btn {
+  padding: 0.5rem;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--on-surface);
+}
+
+.caption-btn:hover {
+  background-color: var(--surface-3);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.ai-caption-btn {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.ai-caption-btn:hover {
+  background-color: #bbdefb;
+  border-color: #1565c0;
+  color: #0d47a1;
+}
+
+.random-caption-btn {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.random-caption-btn:hover {
+  background-color: #e1bee7;
+  border-color: #7b1fa2;
+  color: #4a0072;
 }
 </style> 

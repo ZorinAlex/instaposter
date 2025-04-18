@@ -9,7 +9,8 @@ import {
   UseInterceptors, 
   UploadedFile,
   BadRequestException,
-  UseGuards
+  UseGuards,
+  Query
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
@@ -50,6 +51,17 @@ export class PostsController {
   @Get()
   async findAll(): Promise<PostEntity[]> {
     return this.postsService.findAll();
+  }
+
+  @Get('random-caption')
+  getRandomCaption() {
+    return { caption: this.postsService.generateRandomCaption() };
+  }
+
+  @Get('ai-caption')
+  async getAICaption(@Query('imageUrl') imageUrl?: string) {
+    const caption = await this.postsService.generateAICaption(imageUrl);
+    return { caption };
   }
 
   @Get(':id')
