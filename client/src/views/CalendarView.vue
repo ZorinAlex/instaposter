@@ -58,6 +58,19 @@
             <div v-if="day.posts.length > 2" class="more-posts">
               +{{ day.posts.length - 2 }} more
             </div>
+
+            <!-- Add Quick Create Button for future dates -->
+            <router-link
+              v-if="isFutureOrToday(day.date)"
+              :to="{
+                path: '/posts/new',
+                query: { date: getDefaultTimeForDay(day.date).toISOString() }
+              }"
+              class="quick-create-btn"
+              @click.stop
+            >
+              <i class="fas fa-plus"></i> Add Post
+            </router-link>
           </div>
         </div>
       </div>
@@ -206,6 +219,25 @@ export default {
     },
     viewPostDetails(id) {
       this.$router.push(`/posts/${id}/edit`);
+    },
+    isFutureOrToday(date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return date >= today;
+    },
+    getDefaultTimeForDay(date) {
+      const now = new Date();
+      const targetDate = new Date(date);
+      
+      // If it's today, set time to now + 1 hour
+      if (isSameDay(targetDate, now)) {
+        targetDate.setHours(now.getHours() + 1, now.getMinutes(), 0, 0);
+      } else {
+        // For future dates, set time to 12:00 PM
+        targetDate.setHours(12, 0, 0, 0);
+      }
+      
+      return targetDate;
     }
   },
   created() {
@@ -536,6 +568,29 @@ export default {
   margin-bottom: 1.5rem;
   color: var(--on-surface);
   opacity: 0.8;
+}
+
+.quick-create-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+  padding: 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  margin-top: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.quick-create-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+.quick-create-btn i {
+  font-size: 0.8rem;
 }
 
 @media (max-width: 768px) {
