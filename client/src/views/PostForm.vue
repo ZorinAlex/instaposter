@@ -39,19 +39,11 @@
                 <div class="caption-actions">
                   <button 
                     type="button" 
-                    @click="generateRandomCaption" 
-                    class="caption-btn random-caption-btn"
-                    title="Generate random caption"
-                  >
-                    <i class="fas fa-random"></i>
-                  </button>
-                  <button 
-                    type="button" 
-                    @click="generateAICaption" 
+                    @click="generateCaption" 
                     class="caption-btn ai-caption-btn"
-                    title="Generate AI caption"
+                    title="Generate caption"
                   >
-                    <i class="fas fa-robot"></i>
+                    <i class="fas fa-magic"></i>
                   </button>
                 </div>
               </div>
@@ -355,17 +347,7 @@ export default {
     goBack() {
       this.$router.go(-1);
     },
-    generateRandomCaption() {
-      api.getRandomCaption()
-        .then(response => {
-          this.form.caption = response.data.caption;
-        })
-        .catch(error => {
-          console.error('Error generating random caption:', error);
-          alert('Failed to generate random caption. Please try again.');
-        });
-    },
-    generateAICaption() {
+    generateCaption() {
       // Use either the existing post image URL or the newly uploaded image preview
       let imageUrl = '';
       
@@ -379,17 +361,17 @@ export default {
         // Use the raw image data before cropping
         imageUrl = this.rawImageData;
       } else {
-        alert('Please upload an image first to generate an AI caption');
+        alert('Please upload an image first to generate a caption');
         return;
       }
       
-      api.getAICaption(imageUrl)
+      api.getCaption(imageUrl)
         .then(response => {
           this.form.caption = response.data.caption;
         })
         .catch(error => {
-          console.error('Error generating AI caption:', error);
-          alert('Failed to generate AI caption. Please try again.');
+          console.error('Error generating caption:', error);
+          alert('Failed to generate caption. Please try again.');
         });
     }
   },
@@ -805,39 +787,42 @@ textarea.text-field {
 
 .caption-btn {
   padding: 0.5rem;
-  background-color: var(--surface-2);
-  border: 1px solid var(--border-color);
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+  border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
-  color: var(--on-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
 }
 
 .caption-btn:hover {
-  background-color: var(--surface-3);
+  background-color: var(--primary-dark);
+}
+
+
+.ai-provider-select {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--surface-2);
+  color: var(--on-surface);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-provider-select:hover {
   border-color: var(--primary-color);
-  color: var(--primary-color);
 }
 
-.ai-caption-btn {
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-.ai-caption-btn:hover {
-  background-color: #bbdefb;
-  border-color: #1565c0;
-  color: #0d47a1;
-}
-
-.random-caption-btn {
-  background-color: #f3e5f5;
-  color: #7b1fa2;
-}
-
-.random-caption-btn:hover {
-  background-color: #e1bee7;
-  border-color: #7b1fa2;
-  color: #4a0072;
+.ai-provider-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-light);
 }
 </style> 

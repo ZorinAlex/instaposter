@@ -69,9 +69,9 @@ export default {
     return apiClient.delete(`/posts/${id}`);
   },
   
-  getAICaption(imageUrl) {
-    return apiClient.get(`/posts/ai-caption`, {
-      params: imageUrl ? { imageUrl } : {}
+  getCaption(imageUrl) {
+    return apiClient.get('/posts/caption', {
+      params: { imageUrl }
     });
   },
   

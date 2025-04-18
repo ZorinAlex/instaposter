@@ -4,7 +4,7 @@ import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 import { Post, PostSchema } from './schemas/post.schema';
 import { UploadModule } from '../upload/upload.module';
-import { OpenRouterModule } from '../services/openrouter.module';
+import { ImageCaptionsModule } from '../image-captions/image-captions.module';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { OpenRouterModule } from '../services/openrouter.module';
       { name: Post.name, schema: PostSchema }
     ]),
     UploadModule,
-    OpenRouterModule
+    ImageCaptionsModule
   ],
   controllers: [PostsController],
   providers: [PostsService],

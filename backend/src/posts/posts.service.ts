@@ -1,42 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Post, PostDocument } from './schemas/post.schema';
-import { OpenRouterService } from '../services/openrouter.service';
+import { Post } from './schemas/post.schema';
+import { ImageCaptionsService } from '../image-captions/image-captions.service';
 
 @Injectable()
 export class PostsService {
   constructor(
-    @InjectModel(Post.name) private postModel: Model<PostDocument>,
-    private openRouterService: OpenRouterService
+    @InjectModel(Post.name) private postModel: Model<Post>,
+    private readonly imageCaptionsService: ImageCaptionsService
   ) {}
 
-  private captionTemplates = [
-    "✨ Living my best life\n\n#lifestyle #happy #blessed",
-    "🌟 Making memories that last forever\n\n#memories #moments #life",
-    "🎯 Goals in progress\n\n#motivation #goals #progress",
-    "💫 Every day is a new opportunity\n\n#opportunity #growth #mindset",
-    "🌈 Finding beauty in the little things\n\n#beauty #mindfulness #gratitude",
-    "🎨 Creating my own path\n\n#creativity #journey #inspiration",
-    "🌺 Blooming where I'm planted\n\n#growth #positivity #life",
-    "⭐ Shining bright today and always\n\n#shine #positivevibes #happiness",
-    "🌙 Dreams becoming reality\n\n#dreams #goals #achievement",
-    "🎉 Celebrating life's moments\n\n#celebrate #joy #happiness"
-  ];
-
-  generateRandomCaption(): string {
-    const randomIndex = Math.floor(Math.random() * this.captionTemplates.length);
-    return this.captionTemplates[randomIndex];
-  }
-
-  async generateAICaption(imageUrl?: string): Promise<string> {
-    return this.openRouterService.generateCaption(imageUrl);
-  }
-
   async create(createPostDto: any): Promise<Post> {
-    // If caption is empty or undefined, generate a random one
+    // If caption is empty or undefined, generate one using ImageCaptionsService
     if (!createPostDto.caption || createPostDto.caption.trim() === '') {
-      createPostDto.caption = this.generateRandomCaption();
+      createPostDto.caption = await this.imageCaptionsService.generateCaption(createPostDto.imageUrl);
     }
     
     const createdPost = new this.postModel(createPostDto);
@@ -44,7 +22,7 @@ export class PostsService {
   }
 
   async findAll(): Promise<Post[]> {
-    return this.postModel.find().exec();
+    return this.postModel.find().sort({ scheduledDate: 'asc' }).exec();
   }
 
   async findOne(id: string): Promise<Post | null> {
@@ -52,11 +30,23 @@ export class PostsService {
   }
 
   async update(id: string, updatePostDto: any): Promise<Post | null> {
+    // If caption is empty or undefined, generate one using ImageCaptionsService
+    if (!updatePostDto.caption || updatePostDto.caption.trim() === '') {
+      const post = await this.postModel.findById(id).exec();
+      if (post) {
+        updatePostDto.caption = await this.imageCaptionsService.generateCaption(post.imageUrl);
+      }
+    }
+    
     return this.postModel.findByIdAndUpdate(id, updatePostDto, { new: true }).exec();
   }
 
-  async remove(id: string): Promise<Post | null> {
+  async delete(id: string): Promise<Post | null> {
     return this.postModel.findByIdAndDelete(id).exec();
+  }
+
+  async generateCaption(imageUrl?: string): Promise<string> {
+    return this.imageCaptionsService.generateCaption(imageUrl || '');
   }
 
   async findPendingPosts(date: Date): Promise<Post[]> {

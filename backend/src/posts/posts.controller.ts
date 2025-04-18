@@ -28,6 +28,22 @@ export class PostsController {
     private readonly uploadService: UploadService
   ) {}
 
+  @Get()
+  async findAll(): Promise<PostEntity[]> {
+    return this.postsService.findAll();
+  }
+
+  @Get('caption')
+  async generateCaption(@Query('imageUrl') imageUrl?: string) {
+    const caption = await this.postsService.generateCaption(imageUrl);
+    return { caption };
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<PostEntity | null> {
+    return this.postsService.findOne(id);
+  }
+
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   async create(
@@ -48,46 +64,13 @@ export class PostsController {
     });
   }
 
-  @Get()
-  async findAll(): Promise<PostEntity[]> {
-    return this.postsService.findAll();
-  }
-
-  @Get('random-caption')
-  getRandomCaption() {
-    return { caption: this.postsService.generateRandomCaption() };
-  }
-
-  @Get('ai-caption')
-  async getAICaption(@Query('imageUrl') imageUrl?: string) {
-    const caption = await this.postsService.generateAICaption(imageUrl);
-    return { caption };
-  }
-
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<PostEntity | null> {
-    return this.postsService.findOne(id);
-  }
-
   @Put(':id')
   async update(@Param('id') id: string, @Body() updatePostDto: any): Promise<PostEntity | null> {
     return this.postsService.update(id, updatePostDto);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<PostEntity | null> {
-    // Get the post to find its image URL
-    const post = await this.postsService.findOne(id);
-    const result = await this.postsService.remove(id);
-    
-    // If post is deleted and has an image, delete the image file
-    if (result && post?.imageUrl) {
-      // Extract filename from URL
-      const urlParts = post.imageUrl.split('/');
-      const filename = urlParts[urlParts.length - 1];
-      await this.uploadService.deleteFile(filename);
-    }
-    
-    return result;
+  async delete(@Param('id') id: string): Promise<PostEntity | null> {
+    return this.postsService.delete(id);
   }
 }
