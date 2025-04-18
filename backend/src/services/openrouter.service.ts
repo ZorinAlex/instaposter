@@ -1,61 +1,53 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import OpenAI from 'openai';
 
 @Injectable()
 export class OpenRouterService {
   private readonly logger = new Logger(OpenRouterService.name);
-  private readonly apiKey: string | undefined;
-  private readonly apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+  private readonly openai: OpenAI;
 
   constructor(private configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('OPENROUTER_API_KEY');
+    const apiKey = this.configService.get<string>('OPENROUTER_API_KEY');
+    
+    this.openai = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: apiKey || 'default_key'
+    });
   }
 
   async generateCaption(imageUrl?: string): Promise<string> {
     try {
-      if (!this.apiKey) {
-        this.logger.warn('OpenRouter API key is not set');
-        return this.getFallbackCaption();
-      }
-
       if (!imageUrl) {
         this.logger.warn('No image URL provided for caption generation');
         return this.getFallbackCaption();
       }
 
-      const response = await axios.post(
-        this.apiUrl,
-        {
-          model: 'meta-llama/llama-3.2-11b-vision-instruct:free',
-          messages: [
-            { 
-              role: 'user', 
-              content: [
-                { 
-                  type: 'text', 
-                  text: 'Write a short, flirty, and stylish Instagram caption for a sexy female model photo. Make it captivating and confident. Add popular hashtags and emojis to boost engagement. Return only the caption text — no explanation'
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: imageUrl
-                  }
+      const completion = await this.openai.chat.completions.create({
+        model: "meta-llama/llama-3.2-11b-vision-instruct:free",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: 'text',
+                text: 'Write a short, flirty, and stylish Instagram caption for a sexy female model photo. Make it captivating and confident. Add popular hashtags and emojis to boost engagement. Return only the caption text — no explanation'
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: imageUrl
                 }
-              ]
-            }
-          ],
-          max_tokens: 150
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`
+              }
+            ]
           }
-        }
-      );
-      console.log(JSON.stringify(response.data, null, 2));
-      if (response.data && response.data.choices && response.data.choices.length > 0) {
-        return response.data.choices[0].message.content.trim();
+        ],
+        max_tokens: 150
+      });
+
+      const generatedMessage = completion.choices?.[0]?.message?.content;
+      if (generatedMessage) {
+        return generatedMessage.trim().replace(/['"]/g, '');
       } else {
         throw new Error('Invalid response from OpenRouter API');
       }
