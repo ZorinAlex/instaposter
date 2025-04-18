@@ -75,6 +75,23 @@ export default {
     });
   },
   
+  // Prompts
+  getPrompts() {
+    return apiClient.get('/prompts');
+  },
+  
+  createPrompt(data) {
+    return apiClient.post('/prompts', data);
+  },
+  
+  updatePrompt(id, data) {
+    return apiClient.put(`/prompts/${id}`, data);
+  },
+  
+  deletePrompt(id) {
+    return apiClient.delete(`/prompts/${id}`);
+  },
+  
   // Helper methods
   formatPostDate(dateString) {
     const date = new Date(dateString);

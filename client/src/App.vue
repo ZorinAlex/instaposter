@@ -12,6 +12,9 @@
         <router-link to="/posts" class="nav-link">
           <i class="fas fa-list"></i> Posts
         </router-link>
+        <router-link to="/prompts" class="nav-link">
+          <i class="fas fa-comment-dots"></i> Prompts
+        </router-link>
         <router-link to="/posts/new" class="create-btn">
           <i class="fas fa-plus"></i> New Post
         </router-link>

@@ -10,6 +10,7 @@ import { InstagramModule } from './instagram/instagram.module';
 import { UploadModule } from './upload/upload.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { PromptsModule } from './prompts/prompts.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
     UploadModule,
     AuthModule,
     UsersModule,
+    PromptsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -50,6 +50,12 @@ const routes = [
     meta: { 
       requiresAuth: true  // Protected route
     }
+  },
+  {
+    path: '/prompts',
+    name: 'Prompts',
+    component: () => import('../views/PromptsView.vue'),
+    meta: { requiresAuth: true }
   }
 ];
 

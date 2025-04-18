@@ -16,7 +16,7 @@ export class OpenRouterService {
     });
   }
 
-  async generateCaption(imageUrl: string): Promise<string> {
+  async generateCaption(imageUrl: string, prompt: string): Promise<string> {
       const completion = await this.openai.chat.completions.create({
         model: "meta-llama/llama-3.2-11b-vision-instruct:free",
         messages: [
@@ -25,7 +25,7 @@ export class OpenRouterService {
             content: [
               {
                 type: 'text',
-                text: 'Write a short, flirty, and stylish Instagram caption for a sexy female model photo. Make it captivating and confident. Add popular hashtags and emojis to boost engagement. Return only the caption text — no explanation'
+                text: prompt
               },
               {
                 type: 'image_url',
