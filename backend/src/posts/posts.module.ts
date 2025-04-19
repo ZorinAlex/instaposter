@@ -5,6 +5,8 @@ import { PostsService } from './posts.service';
 import { Post, PostSchema } from './schemas/post.schema';
 import { UploadModule } from '../upload/upload.module';
 import { ImageCaptionsModule } from '../image-captions/image-captions.module';
+import { InstagramModule } from '../instagram/instagram.module';
+import { FacebookModule } from '../facebook/facebook.module';
 
 @Module({
   imports: [
@@ -12,7 +14,9 @@ import { ImageCaptionsModule } from '../image-captions/image-captions.module';
       { name: Post.name, schema: PostSchema }
     ]),
     UploadModule,
-    ImageCaptionsModule
+    ImageCaptionsModule,
+    InstagramModule,
+    FacebookModule
   ],
   controllers: [PostsController],
   providers: [PostsService],
