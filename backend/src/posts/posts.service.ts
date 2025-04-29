@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Post } from './schemas/post.schema';
 import { ImageCaptionsService } from '../image-captions/image-captions.service';
 import { InstagramApiService } from '../instagram/instagram-api.service';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class PostsService {
@@ -12,7 +13,8 @@ export class PostsService {
   constructor(
     @InjectModel(Post.name) private postModel: Model<Post>,
     private readonly imageCaptionsService: ImageCaptionsService,
-    private readonly instagramApiService: InstagramApiService
+    private readonly instagramApiService: InstagramApiService,
+    private readonly uploadService: UploadService
   ) {}
 
   async create(createPostDto: any): Promise<Post> {
@@ -93,12 +95,19 @@ export class PostsService {
         status: 'posted',
         instagramMediaId: igResult.mediaId,
       };
-      if (igResult.instagramImageUrl) updateData.instagramPostUrl = igResult.instagramImageUrl;
+      if (igResult.instagramImageUrl) {
+        // Extract filename from the local image URL
+        const urlParts = post.imageUrl.split('/');
+        const filename = urlParts[urlParts.length - 1];
+        await this.uploadService.deleteFile(filename);
+        this.logger.log(`Deleted local image file: ${filename} (replaced with Instagram URL)`);
+        updateData.imageUrl = igResult.instagramImageUrl;
+      }
       await this.updateById(String(post._id), updateData);
 
       post.status = 'posted';
       post.instagramMediaId = igResult.mediaId;
-      if (igResult.instagramImageUrl) post.instagramPostUrl = igResult.instagramImageUrl;
+      if (igResult.instagramImageUrl) post.imageUrl = igResult.instagramImageUrl;
 
     } catch (error) {
       this.logger.error(
