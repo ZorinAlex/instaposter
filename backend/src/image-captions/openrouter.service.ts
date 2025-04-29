@@ -36,9 +36,9 @@ export class OpenRouterService {
             ]
           }
         ],
-        max_tokens: 150
+        max_tokens: 250
       });
-      const generatedMessage = completion.choices?.[0]?.message?.content;
+    const generatedMessage = completion.choices?.[0]?.message?.content;
       if (generatedMessage) {
         return generatedMessage.trim().replace(/['"]/g, '');
       } else {

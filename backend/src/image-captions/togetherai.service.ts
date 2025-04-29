@@ -35,7 +35,7 @@ export class TogetherAIService {
             ]
           }
         ],
-        max_tokens: 150
+        max_tokens: 250
       });
 
       const generatedMessage = response.choices?.[0]?.message?.content;

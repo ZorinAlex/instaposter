@@ -14,9 +14,13 @@ export class InstagramApiService {
 
   constructor(private configService: ConfigService) {}
 
+  // async publishPost(post: Post): Promise<PublishResult> {
+  //   this.logger.log(`Publishing test post simulation ${post.id}`);
+  //    return { mediaId: '1010101010', instagramImageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" }
+  // }
+
   async publishPost(post: Post): Promise<PublishResult> {
     this.logger.log(`Publishing post with caption: ${post.caption}`);
-
     try {
       const igUserId = this.configService.get<string>('IG_USER_ID');
       const accessToken = this.configService.get<string>('IG_ACCESS_TOKEN');
@@ -35,7 +39,7 @@ export class InstagramApiService {
       // Step 3: Publish the container
       const mediaId = await this.publishContainer(igUserId, accessToken, containerId);
       this.logger.log(`Post published to Instagram with ID: ${mediaId}`);
-      
+
       // Step 4: Get the Instagram image URL
       let instagramImageUrl = undefined;
       try {
@@ -44,7 +48,7 @@ export class InstagramApiService {
       } catch (error) {
         this.logger.warn(`Could not fetch Instagram image URL: ${error.message}`);
       }
-      
+
       return { mediaId, instagramImageUrl };
     } catch (error) {
       this.logger.error(`Failed to publish post to Instagram: ${error.message}`);
