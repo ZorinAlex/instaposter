@@ -7,7 +7,7 @@ import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
+    ScheduleModule,
     PostsModule,
     InstagramModule,
     UploadModule

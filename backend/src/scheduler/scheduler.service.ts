@@ -20,8 +20,7 @@ export class SchedulerService {
   async handleScheduledPosts() {
     this.logger.debug('Checking for posts to publish...');
     try {
-      const now = new Date();
-      const pendingPosts = await this.postsService.findPendingPosts(now);
+      const pendingPosts = await this.postsService.findPendingPosts();
 
       for (const post of pendingPosts) {
         try {
