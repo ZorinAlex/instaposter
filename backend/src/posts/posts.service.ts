@@ -8,7 +8,6 @@ import { InstagramApiService } from '../instagram/instagram-api.service';
 @Injectable()
 export class PostsService {
   private readonly logger = new Logger(PostsService.name);
-  private readonly maxRetryAttempts = 3;
 
   constructor(
     @InjectModel(Post.name) private postModel: Model<Post>,
@@ -70,45 +69,74 @@ export class PostsService {
     return timeSinceLastAttempt >= post.retryDelay;
   }
 
-  private async updatePostStatus(post: Post): Promise<void> {
-    // Update overall post status based on status only
-    if (post.status === 'posted') {
-      post.postedAt = new Date();
+  async updateById(id: string, update: Partial<Post>): Promise<Post | null> {
+    const result = await this.postModel.findByIdAndUpdate(id, update, { new: true }).exec();
+    this.logger.log(`Updated post ${id} with: ${JSON.stringify(update)}. Result: ${JSON.stringify(result)}`);
+    return result;
+  }
+
+  private async handleInstagramPublish(post: Post, attempts: number): Promise<void> {
+    this.logger.log(`handleInstagramPublish called for post ${post._id} with attempts ${attempts}`);
+    const lastAttempt = new Date();
+    await this.updateById(String(post._id), { attempts, lastAttempt });
+    // Fetch the updated post to ensure we have the latest state
+    const updatedPost = await this.postModel.findById(post._id).exec();
+    if (updatedPost) {
+      post.attempts = updatedPost.attempts;
+      post.lastAttempt = updatedPost.lastAttempt;
     }
-    await post.save();
+
+    try {
+      const igResult = await this.instagramApiService.publishPost(post);
+
+      const updateData: Partial<Post> = {
+        status: 'posted',
+        instagramMediaId: igResult.mediaId,
+      };
+      if (igResult.instagramImageUrl) updateData.instagramPostUrl = igResult.instagramImageUrl;
+      await this.updateById(String(post._id), updateData);
+
+      post.status = 'posted';
+      post.instagramMediaId = igResult.mediaId;
+      if (igResult.instagramImageUrl) post.instagramPostUrl = igResult.instagramImageUrl;
+
+    } catch (error) {
+      this.logger.error(
+        `Instagram publish attempt ${attempts} failed:`,
+        error.message
+      );
+      await this.updateById(String(post._id), { status: 'failed' });
+      post.status = 'failed';
+    }
   }
 
   async publishToInstagram(post: Post): Promise<void> {
+    this.logger.log(`publishToInstagram called for post ${post._id}`);
+    if (post.attempts && post.attempts > 0) {
+      throw new Error('publishToInstagram should only be called for first-time posts');
+    }
+    await this.handleInstagramPublish(post, 1);
+  }
+
+  async publishToInstagramRetry(post: Post): Promise<void> {
+    this.logger.log(`publishToInstagramRetry called for post ${post._id}`);
+    if (!post.attempts || post.attempts === 0) {
+      throw new Error('publishToInstagramRetry should only be called for retries');
+    }
     if (!this.canRetry(post)) {
       this.logger.warn(`Max retry attempts reached for Instagram post ${post._id}`);
       return;
     }
-
-    try {
-      post.attempts = (post.attempts || 0) + 1;
-      post.lastAttempt = new Date();
-      await post.save();
-
-      const igResult = await this.instagramApiService.publishPost(post);
-      
-      post.instagramMediaId = igResult.mediaId;
-      if (igResult.instagramImageUrl) {
-        post.instagramPostUrl = igResult.instagramImageUrl;
-      }
-      post.status = 'posted';
-      
-    } catch (error) {
-      this.logger.error(`Instagram publish attempt ${post.attempts} failed:`, error.message);
-      post.status = (post.attempts >= post.maxRetryAttempts) ? 'failed' : 'pending';
-    }
-
-    await post.save();
-    await this.updatePostStatus(post);
+    await this.handleInstagramPublish(post, post.attempts + 1);
   }
 
   async publishPost(post: Post): Promise<Post> {
     // Only publish to Instagram
-    await this.publishToInstagram(post);
+    if (!post.attempts || post.attempts === 0) {
+      await this.publishToInstagram(post);
+    } else {
+      await this.publishToInstagramRetry(post);
+    }
 
     // Refresh and return the post
     const updatedPost = await this.postModel.findById(post._id).exec();
@@ -118,25 +146,26 @@ export class PostsService {
     return updatedPost;
   }
 
-  async findPendingPosts(): Promise<Post[]> {
-    try {
-      const now = new Date();
-      const posts = await this.postModel.find({
-        scheduledDate: { $lte: now },
-        status: { $ne: 'posted' },
-        attempts: { $lt: this.maxRetryAttempts },
-      }).exec();
-
-      return posts;
-    } catch (error) {
-      this.logger.error('Error finding pending posts:', error);
-      return [];
-    }
+  public async findPendingPostsForSchedule(): Promise<Post[]> {
+    const now = new Date();
+    return this.postModel.find({
+      scheduledDate: { $lte: now },
+      status: 'pending',
+      attempts: { $eq: 0 },
+    }).exec();
   }
 
-  async findFailedPosts(): Promise<Post[]> {
-    return this.postModel.find({
-      status: 'failed'
+  public async findFailedPostsForRetry(): Promise<Post[]> {
+    const now = new Date();
+    const retryCandidates = await this.postModel.find({
+      scheduledDate: { $lte: now },
+      status: 'failed',
+      lastAttempt: { $exists: true },
     }).exec();
+    // Filter retry posts by retryDelay in JS (since retryDelay is per-post)
+    return retryCandidates.filter(post => {
+      if (post.maxRetryAttempts <= post.attempts) return false;
+      return (now.getTime() - post.lastAttempt.getTime()) >= post.retryDelay;
+    });
   }
 }
