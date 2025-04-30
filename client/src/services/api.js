@@ -112,5 +112,14 @@ export default {
     };
     
     return colors[status] || '#9e9e9e';
+  },
+  
+  // Auth
+  login(data) {
+    return apiClient.post('/auth/login', data).then(res => res.data);
+  },
+
+  register(data) {
+    return apiClient.post('/auth/register', data).then(res => res.data);
   }
 }; 

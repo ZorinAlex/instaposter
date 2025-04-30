@@ -35,10 +35,10 @@ export class Post extends Document {
 
   @Prop({ default: null })
   lastAttempt: Date;
-
+  
   @Prop()
   instagramMediaId: string;
-
+  
   @Prop()
   instagramPostUrl: string;
 }

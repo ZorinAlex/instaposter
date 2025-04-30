@@ -43,3 +43,12 @@ The frontend connects to the NestJS backend API running on port 3000. The Vite d
 - Axios for API requests
 - V-Calendar for calendar functionality
 - FontAwesome for icons 
+
+## Environment Variables
+
+- `VITE_API_BASE_URL`: The base URL for all API requests from the frontend. Set this to your backend server address (e.g., `http://localhost:3333`) in your `.env` file for local development.
+
+Example `.env`:
+```
+VITE_API_BASE_URL=http://localhost:3333
+``` 
