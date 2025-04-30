@@ -14,12 +14,12 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
-  @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(
-      registerDto.username,
-      registerDto.password,
-      registerDto.email
-    );
-  }
+  // @Post('register')
+  // async register(@Body() registerDto: RegisterDto) {
+  //   return this.authService.register(
+  //     registerDto.username,
+  //     registerDto.password,
+  //     registerDto.email
+  //   );
+  // }
 } 

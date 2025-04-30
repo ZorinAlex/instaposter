@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: zorinalex/insta_post_back
+    container_name: insta-post-back
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
+      - JWT_SECRET=${JWT_SECRET}
+      - BASE_URL=${BASE_URL}
+      - IG_USER_ID=${IG_USER_ID}
+      - IG_ACCESS_TOKEN=${IG_ACCESS_TOKEN}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - TOGETHERAI_API_KEY=${TOGETHERAI_API_KEY}
+    volumes:
+      - uploads_data:/app/public/uploads
+    networks:
+      - nginx_proxy_manager_default
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://api.messagesmonitor.xyz
+    image: zorinalex/insta_post_client
+    container_name: insta-post-client
+    ports:
+      - "8088:80"
+    depends_on:
+      - backend
+    networks:
+      - nginx_proxy_manager_default
+
+volumes:
+  uploads_data:
+
+networks:
+  nginx_proxy_manager_default:
+    external: true
