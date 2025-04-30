@@ -16,7 +16,7 @@ export class InstagramApiService {
 
   // async publishPost(post: Post): Promise<PublishResult> {
   //   this.logger.log(`Publishing test post simulation ${post.id}`);
-  //    return { mediaId: '1010101010', instagramImageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" }
+  //    return { mediaId: '545555555555555', instagramImageUrl: "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg" }
   // }
 
   async publishPost(post: Post): Promise<PublishResult> {
